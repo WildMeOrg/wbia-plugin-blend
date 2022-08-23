@@ -8,7 +8,7 @@ import utool as ut
 import itertools as it
 import numpy as np
 
-from train_blend import get_score_array
+from .train_blend import get_score_array
 
 from wbia.constants import CONTAINERIZED, PRODUCTION  # NOQA
 import vtool as vt
@@ -34,6 +34,7 @@ class PieTwoHotSpotterConfig(dt.Config):  # NOQA
         ]
 
 
+# windowdressing for ID api, copied from PIE v2
 def get_match_results(depc, qaid_list, daid_list, score_list, config):
     """ converts table results into format for ipython notebook """
     # qaid_list, daid_list = request.get_parent_rowids()
@@ -197,18 +198,3 @@ def wbia_plugin_pie_hotspotter_blend(depc, qaid_list, daid_list, config):
     print('Yielding scores')
     for daid, blended_score in zip(daid_list, list(blended_scores)):
         yield (blended_score,)
-
-
-# TODO: remove duplicate func and import from train_blend
-def get_score_array(query_result, qauuid, dauuid_list, no_score_val=0.0):
-    result_dict = query_result['cm_dict'][str(qauuid)]
-    result_dauuids = result_dict['dannot_uuid_list']
-    # TDOD: confirm if we want annot_score_list or score_list below
-    result_scores = result_dict['annot_score_list']
-    assert len(result_dauuids) == len(result_scores)
-    dauid_scores = {dauuid: score for dauuid, score in zip(result_dauuids, result_scores)}
-    score_array = np.array([dauid_scores.get(dauuid, no_score_val) for dauuid in dauuid_list])
-    score_array[np.isneginf(score_array)] = 0.0 # replace missing scores with zero
-
-    return score_array
-
