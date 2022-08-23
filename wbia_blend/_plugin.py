@@ -1,20 +1,15 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function
 
-from wbia import dtool as dt
-from wbia.control import controller_inject
-from wbia.constants import ANNOTATION_TABLE, UNKNOWN
-import utool as ut
-
-import itertools as it
 import numpy as np
-
-from .train_blend import get_score_array
-
-from wbia.constants import CONTAINERIZED, PRODUCTION  # NOQA
+import utool as ut
 import vtool as vt
 import wbia
+from wbia import dtool as dt
+from wbia.constants import ANNOTATION_TABLE, CONTAINERIZED, PRODUCTION, UNKNOWN  # NOQA
+from wbia.control import controller_inject
 
-import tqdm
+from .train_blend import get_score_array
 
 (print, rrr, profile) = ut.inject2(__name__)
 
@@ -117,7 +112,6 @@ class PieTwoHotspotterRequest(dt.base.VsOneSimilarityRequest):
         return result_list
 
 
-
 @register_preproc_annot(
     tablename='PieTwoHotSpotter',
     parents=[ANNOTATION_TABLE, ANNOTATION_TABLE],
@@ -130,24 +124,21 @@ class PieTwoHotspotterRequest(dt.base.VsOneSimilarityRequest):
     chunksize=None,
 )
 def wbia_plugin_pie_hotspotter_blend(depc, qaid_list, daid_list, config):
-    print('Top of Blend')
+    """
+    Fine the weights that generate the best blended accuracy for score_matrices
+    Args:
+        score_matrices: list of n x n score matrices from matching n annotations against each other
+        truth_matrix: n x n boolean matrix labeling when the ground truth is a match
+    """
     ibs = depc.controller
     pie_weight = config.get('pie_weight')
-    hotspotter_weight = 1 - pie_weight
     qaids = list(set(qaid_list))
     daids = list(set(daid_list))
-
     assert len(qaids) == 1, 'Does not support multi-query matching'
-
-    print('Getting PIE scores')
-    # pie_scores = depc.get('PieTwo', (qaids, daids))
-    # for daid, score in zip(daid_list, pie_scores):
-    #     yield score
-    # pie_scores = np.array([score[0] for score in pie_scores])
-
     qauuid = ibs.get_annot_uuids(qaids)[0]
     dauuid_list = ibs.get_annot_uuids(daids)
-    
+
+    print('PIE-HS blend calculating PIE scores')
     try:
         result = ibs.query_chips_graph(
             qaid_list=qaids,
@@ -155,16 +146,15 @@ def wbia_plugin_pie_hotspotter_blend(depc, qaid_list, daid_list, config):
             query_config_dict={'pipeline_root': 'PieTwo'},
             echo_query_params=False,
             cache_images=False,
-            #n=1,
+            # n=1,
             n=1,
         )
-        # each entry out of depc.get is a tuple for some reason
+        # each entry out of depc.get is a tuple
         pie_scores = get_score_array(result, qauuid, dauuid_list)
-    except KeyError as e:
+    except KeyError:
         raise Exception('Pie-HotSpotter Blend called without Pie v2 enabled on wbia')
-    
-    print('Getting HS scores')
 
+    print('PIE-HS blend Getting HS scores')
     try:
         result = ibs.query_chips_graph(
             qaid_list=qaids,
@@ -175,26 +165,14 @@ def wbia_plugin_pie_hotspotter_blend(depc, qaid_list, daid_list, config):
             n=1,
         )
         hotspotter_scores = get_score_array(result, qauuid, dauuid_list)
-    except Exception as e:
-        raise Exception('Pie-HotSpotter Blend encountered error on HS scores')
-        from IPython import embed
-        embed()
-
-    # HS is always enabled
-    print('Blending scores')
-    try:
-        blended_scores = pie_weight * pie_scores + (1 - pie_weight) * hotspotter_scores 
-        # TODO: double check if we want this. Absolute scores are quite low without
-        blended_scores = 10000 * blended_scores
     except Exception:
-        print('blend exception, embedding')
-        from IPython import embed
-        embed()
+        raise Exception('Pie-HotSpotter Blend encountered error on HS scores')
 
-    # from IPython import embed
-    # print("End of Blend plugin embed")
-    # embed()
+    print('PIE-HS blend Blending scores')
+    hotspotter_weight = 1 - pie_weight
+    blended_scores = pie_weight * pie_scores + hotspotter_weight * hotspotter_scores
+    # This just makes scores more readable
+    blended_scores = 1000 * blended_scores
 
-    print('Yielding scores')
     for daid, blended_score in zip(daid_list, list(blended_scores)):
         yield (blended_score,)

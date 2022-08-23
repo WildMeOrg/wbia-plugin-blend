@@ -1,19 +1,11 @@
-import wbia  # NOQA
-# from wbia.other.detectfuncs import general_get_imageset_gids
-import matplotlib.pyplot as plt
-import numpy as np
-import utool as ut
-# import numpy as np
-from collections import defaultdict
+# -*- coding: utf-8 -*-
 
+import numpy as np
+import wbia  # NOQA
 
 QUERY_CONFIG_DICT_DICT = {
-    'PIE v2': {
-        'pipeline_root': 'PieTwo'
-    },
-    'HotSpotter': {
-        'sv_on': True
-    },
+    'PIE v2': {'pipeline_root': 'PieTwo'},
+    'HotSpotter': {'sv_on': True},
 }
 
 
@@ -29,13 +21,17 @@ def train(ibs, aid_list, query_config_dict_dict):
     score_matrix_dict = {}
     algo_names = list(query_config_dict_dict.keys())
     for algo_name in algo_names:
-        score_matrix = compute_score_matrix(ibs, aid_list, query_config_dict_dict[algo_name])
+        score_matrix = compute_score_matrix(
+            ibs, aid_list, query_config_dict_dict[algo_name]
+        )
         score_matrix_dict[algo_name] = score_matrix
 
     names = ibs.get_annot_names(aid_list)
     truth_matrix = np.array(
-        [[names[i] == names[j] for j in range(len(aid_list))] 
-        for i in range(len(aid_list))]
+        [
+            [names[i] == names[j] for j in range(len(aid_list))]
+            for i in range(len(aid_list))
+        ]
     )
 
     topk_dict = {
@@ -88,7 +84,7 @@ def compute_score_matrix(ibs, aid_list, query_config_dict, no_score_val=0.0):
         >>>     [1.09777973e-05, 1.09777973e-05, 1.09777973e-05, 1.09777973e-05, 1.09777973e-05, 1.09777973e-05, 0.00000000e+00, 2.93286728e-04, 2.93286728e-04],
         >>>     [2.55431858e-05, 2.55431858e-05, 2.55431858e-05, 2.55431858e-05, 2.55431858e-05, 2.55431858e-05, 2.96477435e-04, 0.00000000e+00, 2.96477435e-04],
         >>>     [9.37124476e-06, 9.37124476e-06, 9.37124476e-06, 9.37124476e-06, 9.37124476e-06, 9.37124476e-06, 2.96477435e-04, 2.96477435e-04, 0.00000000e+00]
-        >>> ])        
+        >>> ])
         >>> diff = abs(expected_matrix - score_matrix)
         >>> assert (diff < 1e-8).all()
     """
@@ -157,7 +153,7 @@ def get_score_array(query_result, qauuid, dauuid_list, no_score_val=0.0):
         >>>    )
         >>> score_array = get_score_array(query_result, test_auuids[0], test_auuids)
         >>> expected_array = np.array([
-        >>>     0.00000000e+00, 5.86341648e-04, 5.86341648e-04, 5.86341648e-04, 5.86341648e-04, 
+        >>>     0.00000000e+00, 5.86341648e-04, 5.86341648e-04, 5.86341648e-04, 5.86341648e-04,
         >>>     5.86341648e-04, 3.10301033e-05, 3.10301033e-05, 3.10301033e-05
         >>> ])
         >>> assert all(abs(expected_array - score_array) < 1e-7)
@@ -169,7 +165,7 @@ def get_score_array(query_result, qauuid, dauuid_list, no_score_val=0.0):
     dauid_scores = {dauuid: score for dauuid, score in zip(result_dauuids, result_scores)}
     score_array = [dauid_scores.get(dauuid, no_score_val) for dauuid in dauuid_list]
     score_array = np.array(score_array)
-    score_array[np.isneginf(score_array)] = 0.0 # replace missing scores with zero
+    score_array[np.isneginf(score_array)] = 0.0  # replace missing scores with zero
 
     return score_array
 
@@ -180,7 +176,7 @@ def score_matrix_to_topk(score_matrix, truth_matrix):
         score_list = score_matrix[i]
         truth_list = truth_matrix[i]
         accuracy_lists.append(score_list_to_accuracy_list(score_list, truth_list))
-    
+
     accuracy_lists = np.array(accuracy_lists)
     rank_ks = np.sum(accuracy_lists, axis=0)
     accuracy_k = rank_ks / len(rank_ks)
@@ -195,15 +191,25 @@ def score_list_to_accuracy_list(score_list, truth_list, max_k=20):
     score_truth_list = sorted(zip(score_list, truth_list), reverse=True)
     accuracy_list = [score_truth_list[0][1]]
     for i in range(1, max_k):
-        accuracy_list.append(accuracy_list[i-1] or score_truth_list[i][1])
-    
+        accuracy_list.append(accuracy_list[i - 1] or score_truth_list[i][1])
+
     accuracy_list = [int(x) for x in accuracy_list]
     return accuracy_list
 
 
 def top_1_acc(score_matrices, alg_1_weight, truth_matrix):
+    """
+    Calculate the top-1 accuracy of a weighted average of two score matrices
+    Args:
+        score_matrices: list of two n x n score matrices from matching n annotations against each other
+        alg_1_weight  (float): weight for the first set of scores; alg_2_weight = 1 - alg_1_weight
+        truth_matrix: n x n boolean matrix labeling when the ground truth is a match
+
+    """
     assert len(score_matrices) == 2, 'Can only optimize weights between two algorithms'
-    top_k_acc = combined_weighted_accuracy(score_matrices, [alg_1_weight, 1 - alg_1_weight], truth_matrix)
+    top_k_acc = combined_weighted_accuracy(
+        score_matrices, [alg_1_weight, 1 - alg_1_weight], truth_matrix
+    )
     return top_k_acc[0]
 
 
@@ -224,12 +230,18 @@ def combined_weighted_accuracy(score_matrices, weights, truth_matrix):
 
 
 def optimize_weights(score_matrices, truth_matrix):
+    """
+    Fine the weights that generate the best blended accuracy for score_matrices
+    Args:
+        score_matrices: list of n x n score matrices from matching n annotations against each other
+        truth_matrix: n x n boolean matrix labeling when the ground truth is a match
+    """
     assert len(score_matrices) == 2, 'Can only optimize weights between two algorithms'
     candidate_weights = np.linspace(0, 1, num=50)
-    top_1_accs = [top_1_acc(score_matrices, weight, truth_matrix) for weight in candidate_weights]
+    top_1_accs = [
+        top_1_acc(score_matrices, weight, truth_matrix) for weight in candidate_weights
+    ]
     print('top_1_accs:', top_1_accs)
     best_weight = candidate_weights[np.argmax(top_1_accs)]
     print(f'best accuracy: {np.max(top_1_accs)} with alg_1 weight: {best_weight}')
     return best_weight
-
-    
