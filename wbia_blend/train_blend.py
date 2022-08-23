@@ -175,35 +175,6 @@ def get_score_array(query_result, qauuid, dauuid_list, no_score_val=0.0):
 
 
 def score_matrix_to_topk(score_matrix, truth_matrix):
-    r"""
-    Generate embeddings using the Pose-Invariant Embedding (PIE)
-    Args:
-        ibs (IBEISController): IBEIS / WBIA controller object
-        aid_list  (int): annot ids specifying the input
-        query_config_dict: ID configuration dict passed to ibs.query_chips_graph
-    Example:
-        >>> # ENABLE_DOCTEST
-        >>> # Note that this is an expensive test that loads an 1879-image dataset the first time it's run
-        >>> import wbia_blend
-        >>> # from wbia_blend import QUERY_CONFIG_DICT_DICT
-        >>> # use PIE sample data
-        >>> import wbia_pie_v2
-        >>> from wbia_pie_v2._plugin import DEMOS, CONFIGS, MODELS
-        >>> species = 'whale_grey'
-        >>> test_ibs = wbia_pie_v2._plugin.wbia_pie_v2_test_ibs(DEMOS[species], species, 'test2021')
-        >>> aid_list = test_ibs.get_valid_aids(species=species)
-        >>> names = test_ibs.get_annot_names(aid_list)
-        >>> test_names = ['33dfd0d7-ce13-43b7-9c53-a4a1e4fa69d1', '740b1b08-5f33-4810-9fdf-26b0b27260cf']
-        >>> test_aids = [aid for aid, name in zip(aid_list, names) if name in test_names]
-        >>> test_names = test_ibs.get_annot_names(test_aids)
-        >>> truth_matrix = np.array(
-        >>>     [[test_names[i] == test_names[j] for j in range(len(test_names))] 
-        >>>     for i in range(len(test_names))]
-        >>> )
-
-        >>> config = QUERY_CONFIG_DICT_DICT['PIE v2']
-        >>> score_matrix = compute_score_matrix(test_ibs, test_aids, config)
-    """
     accuracy_lists = []
     for i in range(len(score_matrix)):
         score_list = score_matrix[i]
