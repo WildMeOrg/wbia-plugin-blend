@@ -230,4 +230,6 @@ if __name__ == '__main__':
     """
     python -c "import utool; print(utool.__file__)"
     """
+    print("KWARGS for blend setup:")
+    print(**KWARGS)
     setup(**KWARGS)
