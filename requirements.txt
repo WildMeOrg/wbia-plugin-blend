@@ -1,6 +1,4 @@
-matplotlib
 numpy
-scikit-image
 tqdm
 wbia-utool
 wildbook-ia

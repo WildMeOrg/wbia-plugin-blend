@@ -191,7 +191,7 @@ KWARGS = OrderedDict(
     # See https://github.com/pypa/setuptools_scm/ for more information
     setup_requires=['setuptools_scm'],
     use_scm_version={
-        'write_to': 'wbia_pie/_version.py',
+        'write_to': 'wbia_blend/_version.py',
         'write_to_template': '__version__ = "{version}"',
         'tag_regex': '^(?P<prefix>v)?(?P<version>[^\\+]+)(?P<suffix>.*)?$',
         'local_scheme': 'dirty-tag',
