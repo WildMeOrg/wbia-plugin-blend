@@ -223,4 +223,7 @@ if __name__ == '__main__':
     """
     python -c "import wbia_blend; print(wbia_blend.__file__)"
     """
+    from IPython import embed
+    print('examine setup kwargs embed')
+    embed()
     setup(**KWARGS)
