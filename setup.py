@@ -63,6 +63,8 @@ def parse_version(fpath='wbia_blend/__init__.py'):
     """
     import ast
 
+    print('start parse version')
+
     if not exists(fpath):
         raise ValueError('fpath={!r} does not exist'.format(fpath))
     with open(fpath, 'r') as file_:
@@ -77,6 +79,8 @@ def parse_version(fpath='wbia_blend/__init__.py'):
 
     visitor = VersionVisitor()
     visitor.visit(pt)
+
+    print('end parse version')
     return visitor.version
 
 
@@ -182,6 +186,7 @@ AUTHOR_EMAIL = 'dev@wildme.org'
 URL = 'https://github.com/WildbookOrg/wbia-plugin-blend'
 LICENSE = 'Apache Version 2.0'
 DESCRIPTION = 'wbia_blend - simple ensemble of WBIA algorithms'
+VERSION = '1.0.0'
 
 
 KWARGS = OrderedDict(
@@ -196,12 +201,13 @@ KWARGS = OrderedDict(
     # The following settings retreive the version from git.
     # See https://github.com/pypa/setuptools_scm/ for more information
     setup_requires=['setuptools_scm'],
-    use_scm_version={
-        'write_to': 'wbia_blend/_version.py',
-        'write_to_template': '__version__ = "{version}"',
-        'tag_regex': '^(?P<prefix>v)?(?P<version>[^\\+]+)(?P<suffix>.*)?$',
-        'local_scheme': 'dirty-tag',
-    },
+    # use_scm_version={
+    #     'write_to': 'wbia_blend/_version.py',
+    #     'write_to_template': '__version__ = "{version}"',
+    #     'tag_regex': '^(?P<prefix>v)?(?P<version>[^\\+]+)(?P<suffix>.*)?$',
+    #     'local_scheme': 'dirty-tag',
+    # },
+    version=VERSION,
     packages=find_packages(),
     package_dir={'wbia_blend': 'wbia_blend'},
     include_package_data=False,
