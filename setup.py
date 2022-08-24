@@ -179,13 +179,13 @@ KWARGS = OrderedDict(
     long_description_content_type='text/x-rst',
     url=URL,
     license=LICENSE,
-    install_requires=parse_requirements('requirements/runtime.txt'),
-    extras_require={
-        'all': parse_requirements('requirements.txt'),
-        'tests': parse_requirements('requirements/tests.txt'),
-        'build': parse_requirements('requirements/build.txt'),
-        'runtime': parse_requirements('requirements/runtime.txt'),
-    },
+    install_requires=parse_requirements('requirements.txt'),
+    # extras_require={
+    #     'all': parse_requirements('requirements.txt'),
+    #     'tests': parse_requirements('requirements/tests.txt'),
+    #     'build': parse_requirements('requirements/build.txt'),
+    #     'runtime': parse_requirements('requirements/runtime.txt'),
+    # },
     # --- VERSION ---
     # The following settings retreive the version from git.
     # See https://github.com/pypa/setuptools_scm/ for more information
