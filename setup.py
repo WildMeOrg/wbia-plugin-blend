@@ -189,8 +189,6 @@ KWARGS = OrderedDict(
     author=', '.join(AUTHORS),
     author_email=AUTHOR_EMAIL,
     description=DESCRIPTION,
-    long_description=parse_long_description('README.rst'),
-    long_description_content_type='text/x-rst',
     url=URL,
     license=LICENSE,
     install_requires=parse_requirements('requirements.txt'),
@@ -231,5 +229,5 @@ if __name__ == '__main__':
     python -c "import utool; print(utool.__file__)"
     """
     print("KWARGS for blend setup:")
-    print(**KWARGS)
+    print(KWARGS)
     setup(**KWARGS)
