@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
 import sys
 from os.path import exists
 from collections import OrderedDict
 
-# from setuptools import find_packages
+from setuptools import find_packages
 from skbuild import setup
 
 
@@ -89,14 +90,23 @@ def parse_long_description(fpath='README.rst'):
     return ''
 
 
-def parse_requirements(fname='requirements.txt'):
+def parse_requirements(fname='requirements.txt', with_version=False):
     """
-    Parse the package dependencies listed in a requirements file but
-    strips specific versioning information.
+    Parse the package dependencies listed in a requirements file but strips
+    specific versioning information.
+
+    Args:
+        fname (str): path to requirements file
+        with_version (bool, default=False): if true include version specs
+
+    Returns:
+        List[str]: list of requirements items
 
     CommandLine:
         python -c "import setup; print(setup.parse_requirements())"
+        python -c "import setup; print(chr(10).join(setup.parse_requirements(with_version=True)))"
     """
+    from os.path import exists
     import re
 
     require_fpath = fname
@@ -110,28 +120,27 @@ def parse_requirements(fname='requirements.txt'):
             target = line.split(' ')[1]
             for info in parse_require_file(target):
                 yield info
-        elif line.startswith('-e '):
-            info = {}
-            info['package'] = line.split('#egg=')[1]
-            yield info
         else:
-            # Remove versioning from the package
-            pat = '(' + '|'.join(['>=', '==', '>']) + ')'
-            parts = re.split(pat, line, maxsplit=1)
-            parts = [p.strip() for p in parts]
+            info = {'line': line}
+            if line.startswith('-e '):
+                info['package'] = line.split('#egg=')[1]
+            else:
+                # Remove versioning from the package
+                pat = '(' + '|'.join(['>=', '==', '>']) + ')'
+                parts = re.split(pat, line, maxsplit=1)
+                parts = [p.strip() for p in parts]
 
-            info = {}
-            info['package'] = parts[0]
-            if len(parts) > 1:
-                op, rest = parts[1:]
-                if ';' in rest:
-                    # Handle platform specific dependencies
-                    # http://setuptools.readthedocs.io/en/latest/setuptools.html#declaring-platform-specific-dependencies
-                    version, platform_deps = map(str.strip, rest.split(';'))
-                    info['platform_deps'] = platform_deps
-                else:
-                    version = rest  # NOQA
-                info['version'] = (op, version)
+                info['package'] = parts[0]
+                if len(parts) > 1:
+                    op, rest = parts[1:]
+                    if ';' in rest:
+                        # Handle platform specific dependencies
+                        # http://setuptools.readthedocs.io/en/latest/setuptools.html#declaring-platform-specific-dependencies
+                        version, platform_deps = map(str.strip, rest.split(';'))
+                        info['platform_deps'] = platform_deps
+                    else:
+                        version = rest  # NOQA
+                    info['version'] = (op, version)
             yield info
 
     def parse_require_file(fpath):
@@ -142,32 +151,37 @@ def parse_requirements(fname='requirements.txt'):
                     for info in parse_line(line):
                         yield info
 
-    # This breaks on pip install, so check that it exists.
-    packages = []
-    if exists(require_fpath):
-        for info in parse_require_file(require_fpath):
-            package = info['package']
-            if not sys.version.startswith('3.4'):
-                # apparently package_deps are broken in 3.4
-                platform_deps = info.get('platform_deps')
-                if platform_deps is not None:
-                    package += ';' + platform_deps
-            packages.append(package)
+    def gen_packages_items():
+        if exists(require_fpath):
+            for info in parse_require_file(require_fpath):
+                parts = [info['package']]
+                if with_version and 'version' in info:
+                    parts.extend(info['version'])
+                if not sys.version.startswith('3.4'):
+                    # apparently package_deps are broken in 3.4
+                    platform_deps = info.get('platform_deps')
+                    if platform_deps is not None:
+                        parts.append(';' + platform_deps)
+                item = ''.join(parts)
+                yield item
+
+    packages = list(gen_packages_items())
     return packages
 
 
-NAME = 'wbia-blend'
+NAME = 'wbia_nlrnf'
 
 
 MB_PYTHON_TAG = native_mb_python_tag()  # NOQA
 
 AUTHORS = [
     'Drew Blount',
+    'WildMe Developers',
 ]
 AUTHOR_EMAIL = 'dev@wildme.org'
 URL = 'https://github.com/WildbookOrg/wbia-plugin-blend'
-LICENSE = 'BSD'
-DESCRIPTION = 'WBIA Blend - blending algorithms for animal ID'
+LICENSE = 'Apache Version 2.0'
+DESCRIPTION = 'wbia_blend - simple ensemble of WBIA algorithms'
 
 
 KWARGS = OrderedDict(
@@ -180,12 +194,6 @@ KWARGS = OrderedDict(
     url=URL,
     license=LICENSE,
     install_requires=parse_requirements('requirements.txt'),
-    # extras_require={
-    #     'all': parse_requirements('requirements.txt'),
-    #     'tests': parse_requirements('requirements/tests.txt'),
-    #     'build': parse_requirements('requirements/build.txt'),
-    #     'runtime': parse_requirements('requirements/runtime.txt'),
-    # },
     # --- VERSION ---
     # The following settings retreive the version from git.
     # See https://github.com/pypa/setuptools_scm/ for more information
@@ -196,8 +204,7 @@ KWARGS = OrderedDict(
         'tag_regex': '^(?P<prefix>v)?(?P<version>[^\\+]+)(?P<suffix>.*)?$',
         'local_scheme': 'dirty-tag',
     },
-    # packages=find_packages(),
-    packages=['wbia_blend'],
+    packages=find_packages(),
     package_dir={'wbia_blend': 'wbia_blend'},
     include_package_data=False,
     # List of classifiers available at:
@@ -221,6 +228,6 @@ KWARGS = OrderedDict(
 
 if __name__ == '__main__':
     """
-    python -c "import wbia_blend; print(wbia_blend.__file__)"
+    python -c "import utool; print(utool.__file__)"
     """
     setup(**KWARGS)

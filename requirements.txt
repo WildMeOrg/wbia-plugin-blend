@@ -2,3 +2,5 @@ numpy
 tqdm
 wbia-utool
 wildbook-ia
+setuptools>=42
+setuptools_scm[toml]>=3.4
